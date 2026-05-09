@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:vault/SomeConstants.dart';
+import 'package:vault/dbHandling.dart';
 import 'package:vault/pages/homePage.dart';
 import 'package:vault/pages/loginPage.dart';
+import 'package:vault/pages/registerPage.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MainApp());
 }
 
@@ -36,7 +39,7 @@ class MainApp extends StatelessWidget {
         dialogTheme: DialogThemeData(backgroundColor: BACKGROUNDCOLOR),
       ),
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      home: RegisterPage(),
     );
   }
 }

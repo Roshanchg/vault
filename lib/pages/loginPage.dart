@@ -1,5 +1,10 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:vault/SomeConstants.dart';
+import 'package:vault/dbHandling.dart';
+import 'package:vault/helper.dart';
 import 'package:vault/pages/homePage.dart';
 import 'package:vault/pages/registerPage.dart';
 
@@ -12,10 +17,48 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final LocalAuthentication auth = LocalAuthentication();
   @override
   void initState() {
     super.initState();
+    if (mounted) {
+      _navToRegister();
+    }
   }
+
+  Future<void> _navToRegister() async {
+    String pin = await DatabaseHelper().getUserPin();
+    if (pin.isEmpty) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => RegisterPage()),
+      );
+    }
+  }
+
+  Future<void> _biometricLogin() async {
+    if (await auth.canCheckBiometrics) {
+      bool authenticated = false;
+      authenticated = await auth.authenticate(
+        localizedReason: "Scan your fingerprint.",
+        biometricOnly: true,
+        persistAcrossBackgrounding: true,
+      );
+
+      setState(() {
+        authenticated = true;
+      });
+      if (authenticated) {
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (context) => HomePage()));
+      }
+    } else {
+      Helper.showSnackboar(context, "No Sensor for fingerprint.");
+    }
+  }
+
+  String _selectedPin = "";
+  int _pinLength = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +98,9 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 30),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      await _biometricLogin();
+                    },
                     icon: Icon(
                       Icons.fingerprint,
                       color: GREENFOREGROUND,
@@ -76,7 +121,9 @@ class _LoginPageState extends State<LoginPage> {
                           width: 16,
 
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: (_pinLength - index > 0)
+                                ? GREENFOREGROUND
+                                : Colors.white,
                             shape: BoxShape.circle,
                           ),
 
@@ -109,7 +156,17 @@ class _LoginPageState extends State<LoginPage> {
                         _getTextButton("8"),
                         _getTextButton("9"),
                         IconButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            if (_selectedPin.isNotEmpty) {
+                              setState(() {
+                                _selectedPin = _selectedPin.substring(
+                                  0,
+                                  _selectedPin.length - 1,
+                                );
+                                _pinLength = _selectedPin.length;
+                              });
+                            }
+                          },
                           icon: Icon(
                             Icons.backspace,
                             size: 28,
@@ -118,12 +175,21 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         _getTextButton("0"),
                         IconButton(
-                          onPressed: () {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (context) => HomePage(),
-                              ),
-                            );
+                          onPressed: () async {
+                            try {
+                              if (await DatabaseHelper().getUserPin() ==
+                                  _selectedPin) {
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (context) => HomePage(),
+                                  ),
+                                );
+                              } else {
+                                Helper.showSnackboar(context, "Invalid PIN");
+                              }
+                            } catch (e) {
+                              log("Error: $e");
+                            }
                           },
                           icon: Icon(
                             Icons.check_circle,
@@ -164,7 +230,14 @@ class _LoginPageState extends State<LoginPage> {
 
   TextButton _getTextButton(String text) {
     return TextButton(
-      onPressed: () {},
+      onPressed: () {
+        if (_selectedPin.length < 4) {
+          setState(() {
+            _selectedPin += text;
+            _pinLength = _selectedPin.length;
+          });
+        }
+      },
       child: Text(
         text,
         style: TextStyle(

@@ -1,5 +1,11 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:vault/SomeConstants.dart';
+import 'package:vault/classes/User.dart';
+import 'package:vault/dbHandling.dart';
+import 'package:vault/helper.dart';
+import 'package:vault/pages/homepage.dart';
 import 'package:vault/pages/loginPage.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -11,9 +17,51 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  bool _userExists = false;
+  String _selectedPin = "";
+  int _pinLength = 0;
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async => _navValidators());
+  }
+
+  Future<void> _navValidators() async {
+    String pin = await DatabaseHelper().getUserPin();
+    if (pin.isEmpty) {
+      setState(() {
+        _userExists = false;
+      });
+    } else {
+      setState(() {
+        _userExists = true;
+      });
+    }
+  }
+
+  Future<void> _onSubmit() async {
+    try {
+      if (_selectedPin.length != 4) {
+        Helper.showSnackboar(
+          context,
+          "PIN must be 4 character long.",
+          color: Colors.red,
+        );
+        return;
+      } else {
+        if (!_userExists) {
+          await DatabaseHelper().addUser(User(pin: _selectedPin));
+        } else {
+          await DatabaseHelper().updateUserPin(_selectedPin);
+        }
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (context) => HomePage()));
+      }
+    } catch (e) {
+      log(e.toString());
+      return;
+    }
   }
 
   @override
@@ -70,12 +118,15 @@ class _RegisterPageState extends State<RegisterPage> {
                       itemCount: 4,
                       scrollDirection: Axis.horizontal,
                       itemBuilder: (context, index) {
+                        ;
                         return Container(
                           height: 16,
                           width: 16,
 
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: (_pinLength - index > 0)
+                                ? GREENFOREGROUND
+                                : Colors.white,
                             shape: BoxShape.circle,
                           ),
 
@@ -108,7 +159,17 @@ class _RegisterPageState extends State<RegisterPage> {
                         _getTextButton("8"),
                         _getTextButton("9"),
                         IconButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            if (_selectedPin.isNotEmpty) {
+                              setState(() {
+                                _selectedPin = _selectedPin.substring(
+                                  0,
+                                  _selectedPin.length - 1,
+                                );
+                                _pinLength = _selectedPin.length;
+                              });
+                            }
+                          },
                           icon: Icon(
                             Icons.backspace,
                             size: 28,
@@ -117,7 +178,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         _getTextButton("0"),
                         IconButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            _onSubmit();
+                          },
                           icon: Icon(
                             Icons.check_circle,
                             color: GREENFOREGROUND,
@@ -157,7 +220,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
   TextButton _getTextButton(String text) {
     return TextButton(
-      onPressed: () {},
+      onPressed: () {
+        if (_selectedPin.length < 4) {
+          setState(() {
+            _selectedPin += text;
+            _pinLength = _selectedPin.length;
+          });
+        }
+      },
       child: Text(
         text,
         style: TextStyle(
