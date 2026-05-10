@@ -38,19 +38,23 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _biometricLogin() async {
     if (await auth.canCheckBiometrics) {
       bool authenticated = false;
-      authenticated = await auth.authenticate(
-        localizedReason: "Scan your fingerprint.",
-        biometricOnly: true,
-        persistAcrossBackgrounding: true,
-      );
+      try {
+        authenticated = await auth.authenticate(
+          localizedReason: "Scan your fingerprint.",
+          biometricOnly: true,
+          persistAcrossBackgrounding: true,
+        );
 
-      setState(() {
-        authenticated = true;
-      });
-      if (authenticated) {
-        Navigator.of(
-          context,
-        ).pushReplacement(MaterialPageRoute(builder: (context) => HomePage()));
+        setState(() {
+          authenticated = true;
+        });
+        if (authenticated) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => HomePage()),
+          );
+        }
+      } catch (e) {
+        Helper.showSnackboar(context, "No sensor for fingerprint");
       }
     } else {
       Helper.showSnackboar(context, "No Sensor for fingerprint.");

@@ -39,7 +39,7 @@ class MainApp extends StatelessWidget {
         dialogTheme: DialogThemeData(backgroundColor: BACKGROUNDCOLOR),
       ),
       debugShowCheckedModeBanner: false,
-      home: RegisterPage(),
+      home: LoginPage(),
     );
   }
 }
