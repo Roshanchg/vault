@@ -150,7 +150,7 @@ class _HomePageState extends State<HomePage> {
                         if (await Exporter.exportAccounts()) {
                           Helper.showSnackboar(
                             context,
-                            "Export Successfull!\nSaved at Android/data/com.example.vault/files/",
+                            "Export Successfull!\nSaved at Downloads/",
                           );
                         } else {
                           Helper.showSnackboar(context, "Export Failed!!");

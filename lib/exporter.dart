@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:developer';
 import 'package:csv/csv.dart';
+import 'package:file_save_directory/file_save_directory.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vault/classes/Account.dart';
 import 'package:vault/dbHandling.dart';
@@ -28,12 +30,17 @@ class Exporter {
     try {
       Directory? dir = await getExternalStorageDirectory();
       if (dir == null) return false;
-      File csvFile = File(
-        "${dir.path}/accounts_${DateTime.now().millisecondsSinceEpoch}.csv",
+      bool? success;
+      final result = await FileSaveDirectory.instance.saveFile(
+        fileName: "accounts_${DateTime.now().toIso8601String()}.txt",
+        fileBytes: utf8.encode(data),
+        openAfterSave: false,
       );
-      await csvFile.writeAsString(data);
-
-      return true;
+      success = result.success;
+      if (success == true) {
+        return true;
+      }
+      return false;
     } catch (e) {
       log(e.toString());
       return false;
