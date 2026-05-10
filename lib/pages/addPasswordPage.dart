@@ -102,8 +102,8 @@ class _AddPasswordPageState extends State<AddPasswordPage> {
           start: 18,
           bottom: 12,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          // crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               "New Account",
